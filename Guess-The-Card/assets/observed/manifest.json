@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Unbound Sorcerer",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/unbound_sorcerer.png"
+  },
+  {
+    "name": "Awakened Eclipseborn Hawk",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/eclipseborn_hawk.png"
+  },
+  {
+    "name": "Fairy Knight",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/fairy_knight.png"
+  },
+  {
+    "name": "Biscuit Warrior",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/biscuit_warrior.png"
+  },
+  {
+    "name": "Eleventh Slayer",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/eleventh_slayer.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/edgerunner_cyberpunk.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/edgerunner_red_1.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/edgerunner_red_2.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/edgerunner_judy.png"
+  },
+  {
+    "name": "Golden Wind",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/golden_wind_reveal_20261031.png"
+  },
+  {
+    "name": "Anbu Ninja",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/anbu_ninja_reveal_20261031.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/edgerunner_round95_20261031.png"
+  },
+  {
+    "name": "Low Grade Curse",
+    "variant": "Observed in game",
+    "image_file": "assets/observed/low_grade_curse_round99_20261031.png"
+  },
+  {
+    "name": "Tormented Swordsman",
+    "variant": "Observed from confirmed reveal",
+    "image_file": "assets/observed/tormented_swordsman_miss_20261031.png"
+  }
+]

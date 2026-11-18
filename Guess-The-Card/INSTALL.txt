@@ -1,0 +1,9 @@
+Guess the Card
+
+Extract everything and run Start.bat. The first launch installs Python 3.13
+and dependencies as needed. Open Guess the Card in Roblox, then press F8.
+F7 also works. Turn off automatic clicking to preview answers.
+
+To update, close the macro, run Update.bat to download the latest GitHub release.
+Local learning, diagnostics and the Python environment stay in place.
+The optional diagnostic upload previews log text and never sends screenshots.

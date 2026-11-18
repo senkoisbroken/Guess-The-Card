@@ -1,0 +1,11 @@
+**/.venv/
+**/.updates/
+**/__pycache__/
+**/work/
+**/tests/
+**/*.log*
+**/.env*
+**/assets/learned/
+**/assets/miss_diagnostics/
+**/learning_diagnostics.jsonl*
+*.zip
