@@ -2,7 +2,7 @@
 
 Windows helper for the Guess the Card event in Anime Card Clash. It reads the
 four choices from the Roblox window and compares the blurred card with its
-image catalog. It uses normal foreground mouse input.
+image catalog. It uses normal foreground mouse input and does not read or write Roblox process memory or inject anything.
 
 ## Download
 
