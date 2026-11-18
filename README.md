@@ -1,6 +1,6 @@
 # Guess the Card visual macro
 
-This is a separate screen-only Windows macro. It captures the Roblox window and uses normal mouse input; it does not read Roblox process memory or use Potassium.
+This is a separate screen-only Windows macro. It captures the Roblox window and uses normal mouse input; it does not read/write Roblox process memory or inject anything.
 
 1. Start `start.bat`, open the Guess the Card event, and bring Roblox to the foreground.
 2. Press F7 to start or pause. Automatic confident answers and the Give up / Play again sequence are enabled by default; uncheck automatic clicking before starting to preview suggestions without clicking. Give up is only clicked after its text and the Continue heading are recognized; the paid Continue button is never targeted.
