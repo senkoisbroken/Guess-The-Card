@@ -26,6 +26,7 @@ from learning import RevealSampler, revealed_answer, reveal_index, save_observat
 
 F7 = 0x76
 F8 = 0x77
+MAX_STALE_RETRIES = 2
 LOG = None
 
 def diagnostic(event, **details):
@@ -41,15 +42,24 @@ def question_change_metrics(before, after):
     card_b = after[124:404, 207:418].astype(np.int16)
     choices_a = before[228:320, 448:780].astype(np.int16)
     choices_b = after[228:320, 448:780].astype(np.int16)
-    return {'card_difference':float(np.mean(np.abs(card_a-card_b))),
-            'choice_difference':float(np.mean(np.abs(choices_a-choices_b)))}
+    choice_differences = []
+    for x, y in CHOICES:
+        # Compare each label independently, excluding the animated button border.
+        a = before[y+4:y+40, x+8:x+156].astype(np.int16)
+        b = after[y+4:y+40, x+8:x+156].astype(np.int16)
+        difference = a - b
+        shift = np.median(difference, axis=(0, 1))
+        choice_differences.append(float(np.mean(np.abs(difference - shift))))
+    return {
+        'card_difference': float(np.mean(np.abs(card_a - card_b))),
+        'choice_difference': float(np.mean(np.abs(choices_a - choices_b))),
+        'choice_detail_difference': max(choice_differences),
+    }
 
 def same_question(before, after):
-    """Reject an answer if the picture or the displayed choices changed."""
-    scores=question_change_metrics(before,after)
-    # Small brightness/animation changes in the buttons can exceed 5 even
-    # while the card and choices are unchanged. Keep a strict card check.
-    return scores['card_difference'] < 5 and scores['choice_difference'] < 8
+    """Reject a changed card or answer label while tolerating button brightness shifts."""
+    scores = question_change_metrics(before, after)
+    return scores['card_difference'] < 5 and scores['choice_detail_difference'] < 4
 
 def same_pending_question(before, after):
     """Keep a pending card while an answer button changes to its pressed state."""
@@ -246,10 +256,14 @@ class App:
                     if pending is not None and pending_is_new_question(pending, frame):
                         diagnostic('pending_abandoned',reason='next_question',reveal_seen=bool(pending.get('reveal_logged')))
                         pending = None
+                    stale_retries = 0
                     if pending is not None:
-                        # Keep watching for the reveal instead of spending the
-                        # whole timer re-reading an unchanged unknown card.
-                        continue
+                        stale_retries = pending.get('stale_retries', 0)
+                        if (not 0 < stale_retries <= MAX_STALE_RETRIES
+                                or pending.get('reveal_logged')):
+                            # Unknown or already answered: keep watching for the reveal.
+                            continue
+                        pending = None
                     if answered is not None and same_question(answered, frame):
                         continue
                     native = layout['choice_crops']
@@ -297,19 +311,31 @@ class App:
                         continue
                     if not self.running.is_set() or self.desktop.roblox_window() != hwnd or self.desktop.client_rect(hwnd) != bounds:
                         continue
+                    def schedule_stale_retry(stage, current):
+                        candidate['stale_retries'] = stale_retries + 1
+                        retry = candidate['stale_retries'] <= MAX_STALE_RETRIES
+                        diagnostic('stale_answer', stage=stage, layout=current['kind'],
+                                   client_size=(width, height), retry=retry,
+                                   **(question_change_metrics(frame, current['frame'])
+                                      if current['kind'] == 'question' else {}))
+                        detail = ('Question changed before clicking. Checking again.' if retry else
+                                  'Question stayed unstable. Watching for the reveal.')
+                        self.messages.put(('detail', detail))
+
                     latest = locate(grab())
                     if latest['kind'] != 'question' or not same_question(frame, latest['frame']):
+                        schedule_stale_retry('before_move', latest)
                         pending = candidate
-                        diagnostic('stale_answer',stage='before_move',layout=latest['kind'],
-                                   **(question_change_metrics(frame,latest['frame']) if latest['kind']=='question' else {}))
-                        self.messages.put(('detail', 'Question changed during recognition; skipping stale answer.'))
                         continue
                     x,y = latest['clicks'][result['index']]
                     def question_still_visible():
                         current = locate(grab())
-                        return (current['kind'] == 'question' and
+                        if (current['kind'] == 'question' and
                                 current['clicks'][result['index']] == (x, y) and
-                                same_question(frame, current['frame']))
+                                same_question(frame, current['frame'])):
+                            return True
+                        schedule_stale_retry('before_press', current)
+                        return False
                     if self.desktop.click_client(hwnd, bounds, x, y, allowed, before_press=question_still_visible):
                         answered = frame.copy()
                         diagnostic('clicked',status=result['status'],name=result['name'],index=result['index'],
