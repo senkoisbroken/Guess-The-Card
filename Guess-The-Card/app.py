@@ -21,7 +21,7 @@ import numpy as np
 
 from desktop import WindowsDesktop
 from matcher import Catalog, QuestionReader, answer_for, answer_compact, answer_with_native, best_effort_answer, CARD, CLICK_POINTS, CHOICES, ROOT
-from diagnostics import open_log, preview_upload, read_build, run_speed_check
+from diagnostics import open_log, preview_upload, read_build, run_speed_check, save_stale_pair
 from layout import compact_question, compact_replay, give_up_button
 from learning import RevealSampler, revealed_answer, reveal_index, save_observation, save_miss_evidence
 
@@ -67,10 +67,52 @@ def question_change_metrics(before, after):
         'choice_detail_difference': max(choice_differences),
     }
 
+def _same_choice_strokes(before, after):
+    if before is None or after is None or before.shape != after.shape or len(CHOICES) != 4:
+        return False
+    h, w = before.shape[:2]
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    for x, y in CHOICES:
+        if x < 0 or y < 0 or x + 164 > w or y + 44 > h:
+            return False
+        bh_b = cv2.morphologyEx(cv2.cvtColor(before[y:y + 44, x:x + 164], cv2.COLOR_BGR2GRAY), cv2.MORPH_BLACKHAT, kernel)[6:38, 8:156]
+        bh_a = cv2.morphologyEx(cv2.cvtColor(after[y:y + 44, x:x + 164], cv2.COLOR_BGR2GRAY), cv2.MORPH_BLACKHAT, kernel)[6:38, 8:156]
+        p_b = float(np.percentile(bh_b, 99))
+        p_a = float(np.percentile(bh_a, 99))
+        if p_b < 24.0 or p_a < 24.0:
+            return False
+        mask_b = bh_b >= max(16.0, p_b * 0.4)
+        mask_a = bh_a >= max(16.0, p_a * 0.4)
+        tpl_mask = mask_b[2:-2, 2:-2]
+        cnt_b = int(tpl_mask.sum())
+        if cnt_b < 64 or cnt_b > tpl_mask.size * 0.6:
+            return False
+        tpl = np.where(tpl_mask, bh_b[2:-2, 2:-2], 0).astype(np.float32)
+        src = np.where(mask_a, bh_a, 0).astype(np.float32)
+        res = cv2.matchTemplate(src, tpl, cv2.TM_CCOEFF_NORMED)
+        _, score, _, (dx, dy) = cv2.minMaxLoc(res)
+        if not np.isfinite(score) or score < 0.88:
+            return False
+        cnt_a = int(mask_a[dy:dy + tpl.shape[0], dx:dx + tpl.shape[1]].sum())
+        if cnt_a < 64 or min(cnt_b, cnt_a) / max(cnt_b, cnt_a) < 0.75:
+            return False
+    return True
+
+
 def same_question(before, after):
-    """Reject a changed card or answer label while tolerating button brightness shifts."""
+    """Recheck the card and all four labels before using a recognized answer."""
     scores = question_change_metrics(before, after)
-    return scores['card_difference'] < 5 and scores['choice_detail_difference'] < 4
+    if scores['card_difference'] >= 5:
+        return False
+    if scores['choice_detail_difference'] < 4:
+        return True
+    # A result can retain the same labels but color or darken their pills.
+    for image in (before, after):
+        for x, y in CHOICES:
+            background = np.median(image[y+8:y+36, x+12:x+152:4], axis=(0, 1))
+            if background.min() < 145 or np.ptp(background) > 55:
+                return False
+    return _same_choice_strokes(before, after)
 
 def same_pending_question(before, after):
     """Keep a pending card while an answer button changes to its pressed state."""
@@ -186,6 +228,7 @@ class App:
             self.messages.put(('detail', f'Catalog ready: {len(catalog.records)} wiki entries.'))
             self.messages.put(('speed_ready', ''))
             answered = pending = replay = None
+            last_stale_capture = float("-inf")
             with mss.MSS() as capture:
                 while not self.closed.wait(.03):
                     if not self.running.is_set():
@@ -413,13 +456,20 @@ class App:
                             diagnostic('learning_error',error=str(exc))
                         continue
                     def schedule_stale_retry(stage, current):
+                        nonlocal last_stale_capture
                         candidate['stale_retries'] = stale_retries + 1
                         retry = candidate['stale_retries'] <= MAX_STALE_RETRIES
+                        scores = (question_change_metrics(frame, current['frame'])
+                                  if current['kind'] == 'question' else {})
+                        now = time.monotonic()
+                        if (scores and scores['card_difference'] < 5
+                                and scores['choice_detail_difference'] >= 4
+                                and now - last_stale_capture >= 8):
+                            last_stale_capture = now
+                            scores['saved_pair'] = save_stale_pair(ROOT, frame, current['frame'], stage)
                         diagnostic('stale_answer', stage=stage, layout=current['kind'],
                                    client_size=(width, height), retry=retry, recognition_ms=recognition_ms,
-                                   capture_ms=capture_ms, layout_ms=layout_ms,
-                                   **(question_change_metrics(frame, current['frame'])
-                                      if current['kind'] == 'question' else {}))
+                                   capture_ms=capture_ms, layout_ms=layout_ms, **scores)
                         detail = ('Question changed before clicking. Checking again.' if retry else
                                   'Question stayed unstable. Watching for the reveal.')
                         self.messages.put(('detail', detail))

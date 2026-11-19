@@ -131,3 +131,51 @@ def preview_upload(root, folder, results, closed, button):
         threading.Thread(target=upload, daemon=True).start()
 
     ttk.Button(dialog, text='Send reviewed log', command=send).pack(pady=8)
+
+
+def save_stale_pair(root, before, after, stage) -> bool:
+    try:
+        import time
+        import uuid
+        import cv2
+        import numpy as np
+
+        for frame in (before, after):
+            if not isinstance(frame, np.ndarray) or frame.shape != (504, 960, 3) or frame.dtype != np.uint8:
+                return False
+
+        rois = (
+            (124, 404, 207, 418),
+            (228, 272, 448, 612),
+            (228, 272, 616, 780),
+            (276, 320, 448, 612),
+            (276, 320, 616, 780),
+        )
+        gap = 4
+        row_h = max(y2 - y1 for y1, y2, _, _ in rois)
+        row_w = sum(x2 - x1 for _, _, x1, x2 in rois) + gap * (len(rois) - 1)
+        montage = np.zeros((row_h * 2 + gap, row_w, 3), dtype=np.uint8)
+
+        for r, frame in enumerate((before, after)):
+            y0, x0 = r * (row_h + gap), 0
+            for y1, y2, x1, x2 in rois:
+                h, w = y2 - y1, x2 - x1
+                montage[y0 : y0 + h, x0 : x0 + w] = frame[y1:y2, x1:x2]
+                x0 += w + gap
+
+        ok, buf = cv2.imencode(".jpg", montage, [cv2.IMWRITE_JPEG_QUALITY, 85])
+        if not ok:
+            return False
+
+        out_dir = Path(root) / "stale_captures"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        tag = stage if stage in ("before_move", "before_press", "before_native_fallback") else "unknown"
+        path = out_dir / f"stale_{time.time_ns()}_{uuid.uuid4().hex[:6]}_{tag}.jpg"
+        path.write_bytes(buf.tobytes())
+
+        jpgs = sorted(out_dir.glob("stale_*.jpg"), key=lambda p: (p.stat().st_mtime_ns, p.name))
+        for old in jpgs[:-6]:
+            old.unlink(missing_ok=True)
+        return True
+    except (OSError, ValueError, cv2.error):
+        return False
