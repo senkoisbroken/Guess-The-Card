@@ -134,7 +134,8 @@ def revealed_answer(pending, raw, reader, now=None):
     # Native OCR may miss long, low-contrast labels. The fast canonical OCR
     # provides an independent reading of the original choice text.
     alternate=reader.options(pending['frame'])
-    if len(before)!=4 or len(after)!=4:return None
+    if len(before) != 4 or len(after) != 4 or len(alternate) != 4:
+        return None
     same=[]
     for (a,ac),(b,bc),(alt,altc) in zip(before,after,alternate):
         b=normalize_text(b)

@@ -5,6 +5,7 @@ import queue
 import sys
 import threading
 import time
+from dataclasses import dataclass
 from pathlib import Path
 
 _tcl_root = Path(sys.base_prefix) / 'tcl'
@@ -27,7 +28,17 @@ from learning import RevealSampler, revealed_answer, reveal_index, save_observat
 F7 = 0x76
 F8 = 0x77
 MAX_STALE_RETRIES = 2
+MAX_REPLAY_ATTEMPTS = 3
+REPLAY_CONFIRM_SECONDS = .5
 LOG = None
+
+
+@dataclass
+class ReplayAttempt:
+    target: tuple
+    count: int = 0
+    confirm_by: float = 0.
+    sent: bool = False
 
 def diagnostic(event, **details):
     """Record decisions and learning outcomes without capturing other apps."""
@@ -145,12 +156,12 @@ class App:
             catalog.load(lambda i,n: self.messages.put(('detail', f'Indexing images: {i}/{n}')))
             reader = QuestionReader()
             self.messages.put(('detail', f'Catalog ready: {len(catalog.records)} wiki entries.'))
-            answered = None; replay_clicked = False; pending = None
+            answered = pending = replay = None
             with mss.MSS() as capture:
                 while not self.closed.wait(.03):
                     if not self.running.is_set():
                         if pending is not None: diagnostic('pending_abandoned',reason='paused')
-                        answered = None; replay_clicked = False; pending = None
+                        answered = pending = replay = None
                         continue
                     hwnd = self.desktop.roblox_window()
                     if not hwnd:
@@ -203,7 +214,21 @@ class App:
                                                clicked_index=pending['clicked_index'],**evidence)
                                 except (OSError, ValueError, KeyError, cv2.error) as exc:
                                     diagnostic('miss_evidence_error',error=str(exc))
-                            learned = revealed_answer(pending,frame,reader)
+                            if revealed is not None and not pending.get('reveal_logged'):
+                                clicked = pending.get('clicked_index')
+                                outcome = 'unknown'
+                                if clicked is not None:
+                                    outcome = 'correct' if clicked == revealed else 'wrong'
+                                diagnostic('answer_outcome', outcome=outcome,
+                                           correct_index=revealed, clicked_index=clicked)
+                                pending['reveal_logged'] = True
+                            if revealed is None:
+                                learned = None
+                            elif revealed == pending.get('clicked_index') and not pending.get('learn_correct_guess'):
+                                pending = None
+                                learned = None
+                            else:
+                                learned = revealed_answer(pending, frame, reader)
                             if learned is not None:
                                 try:
                                     saved = save_observation(catalog,*learned,ROOT)
@@ -214,12 +239,13 @@ class App:
                                     diagnostic('learning_error',error=str(exc))
                                     self.messages.put(('detail', f'Could not save learned card: {exc}'))
                                 pending = None
-                            elif revealed is not None and not pending.get('reveal_logged'):
-                                diagnostic('reveal_not_learned',correct_index=revealed,clicked_index=pending.get('clicked_index'))
-                                pending['reveal_logged']=True
+                            elif revealed is not None and pending is not None and not pending.get('learning_rejected_logged'):
+                                diagnostic('reveal_not_learned', correct_index=revealed,
+                                           clicked_index=pending.get('clicked_index'))
+                                pending['learning_rejected_logged'] = True
                     layout = locate(frame)
                     if layout['kind'] == 'give_up':
-                        answered = None; replay_clicked = False
+                        answered = replay = None
                         self.messages.put(('detail', 'Run lost. Give up detected.'))
                         if self.live and self.replay_enabled:
                             x,y=layout['point']
@@ -237,20 +263,47 @@ class App:
                         continue
                     if layout['kind'] == 'replay':
                         answered = None
-                        self.messages.put(('detail', 'Run finished. Play again detected.'))
-                        if self.live and self.replay_enabled and not replay_clicked:
-                            x,y=layout['point']
-                            def replay_still_visible():
-                                current = locate(grab())
-                                return current['kind'] == 'replay' and current['point'] == (x, y)
-                            if self.desktop.click_client(hwnd, bounds, x, y, allowed, before_press=replay_still_visible):
-                                replay_clicked = True
+                        if not self.live or not self.replay_enabled:
+                            self.messages.put(('detail', 'Run finished. Play again detected.'))
+                            continue
+                        x, y = layout['point']
+                        target = (hwnd, bounds, x, y)
+                        if replay is None:
+                            replay = ReplayAttempt(target)
+                        if replay.target != target:
+                            self.messages.put(('detail', 'Replay target moved. Pause and resume to retry.'))
+                            continue
+                        now = time.monotonic()
+                        if now < replay.confirm_by:
+                            continue
+                        if replay.count >= MAX_REPLAY_ATTEMPTS:
+                            diagnostic('replay_unconfirmed', attempts=replay.count)
+                            self.messages.put(('detail', 'Play Again did not start a run.'))
+                            replay.confirm_by = float('inf')
+                            continue
+
+                        def replay_still_visible():
+                            current = locate(grab())
+                            return current['kind'] == 'replay' and current['point'] == (x, y)
+
+                        clicked = self.desktop.click_client(hwnd, bounds, x, y, allowed,
+                                                            before_press=replay_still_visible)
+                        replay.count += 1
+                        replay.sent |= clicked
+                        replay.confirm_by = time.monotonic() + REPLAY_CONFIRM_SECONDS
+                        diagnostic('replay_attempt', attempt=replay.count, click_sent=clicked)
+                        detail = ('Play Again clicked. Waiting for the next question.' if clicked else
+                                  'Play Again click interrupted. Waiting to retry.')
+                        self.messages.put(('detail', detail))
                         continue
                     if layout['kind'] != 'question':
-                        answered = None; replay_clicked = False
+                        answered = None
                         self.messages.put(('detail', 'Waiting for an active question.'))
                         continue
-                    replay_clicked = False
+                    if replay is not None:
+                        if replay.sent and replay.target[:2] == (hwnd, bounds):
+                            diagnostic('replay_confirmed', attempts=replay.count)
+                        replay = None
                     frame_raw = frame
                     frame = layout['frame']
                     if pending is not None and pending_is_new_question(pending, frame):
@@ -376,6 +429,13 @@ class App:
                                    'bounds':bounds,'hwnd':hwnd,'clicked_index':result['index'],
                                    'learn_correct_guess':result['status']=='guess'}
                     else:
+                        if 'stale_retries' not in candidate:
+                            candidate['stale_retries'] = stale_retries + 1
+                            retry = candidate['stale_retries'] <= MAX_STALE_RETRIES
+                            diagnostic('click_interrupted', retry=retry, recognition_ms=recognition_ms)
+                            detail = ('Answer click interrupted. Checking again.' if retry else
+                                      'Answer click interrupted. Watching for the reveal.')
+                            self.messages.put(('detail', detail))
                         pending = candidate
         except Exception as exc:
             self.messages.put(('error', f'Stopped: {type(exc).__name__}: {exc}'))

@@ -106,13 +106,43 @@ class UploadClient:
         return PostResult(False, REJECTED, 'Server rejected the log.')
 
 
-def snapshot_lines(root, token=''):
-    path = Path(root) / 'macro.log'
+def _complete_log_tail(path, limit):
     with path.open('rb') as stream:
         stream.seek(0, 2)
         size = stream.tell()
-        stream.seek(max(0, size - MAX_BYTES))
-        data = stream.read(MAX_BYTES).decode('utf-8', errors='replace')
+        start = max(0, size - limit)
+        first_partial = False
+        if start:
+            stream.seek(start - 1)
+            first_partial = stream.read(1) != b'\n'
+        else:
+            stream.seek(0)
+        data = stream.read(size - start)
+    if first_partial:
+        data = data.partition(b'\n')[2]
+    if data and not data.endswith(b'\n'):
+        data = data.rpartition(b'\n')[0]
+        if data:
+            data += b'\n'
+    return data, start > 0
+
+
+def snapshot_lines(root, token=''):
+    root = Path(root)
+    missing = None
+    try:
+        current, truncated = _complete_log_tail(root / 'macro.log', MAX_BYTES)
+    except FileNotFoundError as exc:
+        current, truncated = b'', False
+        missing = exc
+    previous = b''
+    if not truncated and len(current) < MAX_BYTES:
+        try:
+            previous, _ = _complete_log_tail(root / 'macro.log.1', MAX_BYTES - len(current))
+        except FileNotFoundError:
+            if missing is not None:
+                raise missing
+    data = (previous + current).decode('utf-8', errors='replace')
     if not data.strip():
         raise ValueError('The log is empty')
     if token:
