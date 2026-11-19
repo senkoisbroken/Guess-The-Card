@@ -17,3 +17,5 @@ Layout recognition has been checked offline against captures from 1920×1009 and
 Sources: [Card Index](https://anime-card-clash-official.fandom.com/wiki/Card_Index), [Skin Index](https://anime-card-clash-official.fandom.com/wiki/Miscellaneous_Page). Image attribution and source URLs are retained in the catalog. Respect the source wiki's license when redistributing its content.
 
 The setup ZIP installs its own dependencies with 64-bit Python 3.13. F8 and F7 both start or pause. Run Update.bat to install the latest GitHub release. For an offline update, run Update.bat --local. Both preserve local learning and logs. Review diagnostic log lets you inspect the recent log before optionally sending it; screenshots and learned cards are never uploaded.
+
+To compare speed between PCs, use the same build on both. Pause the macro, click **Run speed check**, and wait for it to finish. Then open **Review diagnostic log** and send the reviewed log. The check runs OCR and matching on fixed test images and records the timings and input fingerprint. It runs without capturing your screen or sending input.

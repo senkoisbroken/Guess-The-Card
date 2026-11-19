@@ -21,7 +21,7 @@ import numpy as np
 
 from desktop import WindowsDesktop
 from matcher import Catalog, QuestionReader, answer_for, answer_compact, answer_with_native, best_effort_answer, CARD, CLICK_POINTS, CHOICES, ROOT
-from diagnostics import open_log, preview_upload
+from diagnostics import open_log, preview_upload, read_build, run_speed_check
 from layout import compact_question, compact_replay, give_up_button
 from learning import RevealSampler, revealed_answer, reveal_index, save_observation, save_miss_evidence
 
@@ -85,9 +85,13 @@ class App:
     def __init__(self, root):
         global LOG
         LOG = open_log(ROOT)
+        build = read_build(ROOT)
+        diagnostic('session_start', build=build)
         self.root = root
         self.desktop = WindowsDesktop(); self.desktop.prepare_dpi()
         self.running = threading.Event(); self.closed = threading.Event()
+        self.speed_requested = threading.Event()
+        self.speed_in_progress = False
         self.messages = queue.Queue(); self.last_f7 = False
         self.live = False; self.replay_enabled = False; self.guess_enabled = False
         self.automatic = tk.BooleanVar(value=True)
@@ -95,7 +99,7 @@ class App:
         self.guess = tk.BooleanVar(value=True)
         self.status = tk.StringVar(value='Paused. Press F7 or Start, then focus Roblox.')
         self.detail = tk.StringVar(value='Preparing card catalog…')
-        root.title('Guess the Card - visual macro')
+        root.title(f'Guess the Card - {build}')
         frame = ttk.Frame(root, padding=18); frame.grid()
         ttk.Label(frame, text='Guess the Card', font=('Segoe UI', 16, 'bold')).grid(row=0, column=0, sticky='w')
         ttk.Label(frame, text='Screen-only recognition. F7 starts or pauses.', wraplength=480).grid(row=1, column=0, sticky='w', pady=6)
@@ -113,16 +117,33 @@ class App:
         self.diagnostic_button = ttk.Button(frame, text='Review diagnostic log',
             command=lambda: preview_upload(root, ROOT, self.messages, self.closed, self.diagnostic_button))
         self.diagnostic_button.grid(row=9, column=0, sticky='w', pady=6)
+        self.speed_button = ttk.Button(frame, text='Run speed check', command=self.request_speed_check)
+        self.speed_button.grid(row=10, column=0, sticky='w', pady=6)
+        self.speed_button.state(['disabled'])
         root.protocol('WM_DELETE_WINDOW', self.close)
         self.thread = threading.Thread(target=self.worker, daemon=True); self.thread.start()
         root.after(100, self.poll)
 
+    def request_speed_check(self):
+        if self.running.is_set() or self.speed_in_progress or not self.thread.is_alive():
+            return
+        self.speed_in_progress = True
+        self.speed_button.state(['disabled'])
+        self.button.state(['disabled'])
+        self.detail.set('Running the speed check while paused…')
+        self.speed_requested.set()
+
     def toggle(self):
+        if self.speed_in_progress:
+            return
         if self.running.is_set():
             self.running.clear(); self.button.config(text='Start (F7)')
             self.click_box.state(['!disabled']); self.replay_box.state(['!disabled']); self.guess_box.state(['!disabled'])
             self.status.set('Paused.')
+            if self.thread.is_alive():
+                self.speed_button.state(['!disabled'])
         else:
+            self.speed_button.state(['disabled'])
             self.live = bool(self.automatic.get()); self.replay_enabled = bool(self.replay.get()); self.guess_enabled = bool(self.guess.get())
             self.click_box.state(['disabled']); self.replay_box.state(['disabled']); self.guess_box.state(['disabled'])
             self.running.set(); self.button.config(text='Pause (F7)')
@@ -137,6 +158,13 @@ class App:
             while True:
                 kind, text = self.messages.get_nowait()
                 if kind == 'detail': self.detail.set(text)
+                elif kind == 'speed_ready' and not self.running.is_set():
+                    self.speed_button.state(['!disabled'])
+                elif kind == 'speed_done':
+                    self.speed_in_progress = False
+                    self.detail.set(text)
+                    self.button.state(['!disabled'])
+                    self.speed_button.state(['!disabled'])
                 elif kind == 'diagnostics':
                     self.detail.set(text)
                     self.diagnostic_button.state(['!disabled'])
@@ -156,12 +184,23 @@ class App:
             catalog.load(lambda i,n: self.messages.put(('detail', f'Indexing images: {i}/{n}')))
             reader = QuestionReader()
             self.messages.put(('detail', f'Catalog ready: {len(catalog.records)} wiki entries.'))
+            self.messages.put(('speed_ready', ''))
             answered = pending = replay = None
             with mss.MSS() as capture:
                 while not self.closed.wait(.03):
                     if not self.running.is_set():
                         if pending is not None: diagnostic('pending_abandoned',reason='paused')
                         answered = pending = replay = None
+                        if self.speed_requested.is_set():
+                            self.speed_requested.clear()
+                            try:
+                                results = run_speed_check(ROOT, reader, self.closed.is_set)
+                                diagnostic('speed_check', **results)
+                                detail = ('Speed check saved. Open Review diagnostic log to send it. '
+                                          f"OCR: {results['wide_ocr_ms']:.1f} ms.")
+                            except Exception as exc:
+                                detail = f'Speed check failed: {type(exc).__name__}'
+                            self.messages.put(('speed_done', detail))
                         continue
                     hwnd = self.desktop.roblox_window()
                     if not hwnd:
@@ -195,7 +234,9 @@ class App:
                         if compact is not None:
                             compact['kind']='question';return compact
                         return {'kind':'waiting'}
+                    capture_started = time.monotonic()
                     frame = grab()
+                    capture_ms = round((time.monotonic() - capture_started) * 1000, 2)
                     if not self.running.is_set() or self.desktop.roblox_window() != hwnd or self.desktop.client_rect(hwnd) != bounds:
                         continue
                     allowed = lambda: self.running.is_set() and not self.closed.is_set() and self.live
@@ -243,7 +284,9 @@ class App:
                                 diagnostic('reveal_not_learned', correct_index=revealed,
                                            clicked_index=pending.get('clicked_index'))
                                 pending['learning_rejected_logged'] = True
+                    layout_started = time.monotonic()
                     layout = locate(frame)
+                    layout_ms = round((time.monotonic() - layout_started) * 1000, 2)
                     if layout['kind'] == 'give_up':
                         answered = replay = None
                         self.messages.put(('detail', 'Run lost. Give up detected.'))
@@ -374,6 +417,7 @@ class App:
                         retry = candidate['stale_retries'] <= MAX_STALE_RETRIES
                         diagnostic('stale_answer', stage=stage, layout=current['kind'],
                                    client_size=(width, height), retry=retry, recognition_ms=recognition_ms,
+                                   capture_ms=capture_ms, layout_ms=layout_ms,
                                    **(question_change_metrics(frame, current['frame'])
                                       if current['kind'] == 'question' else {}))
                         detail = ('Question changed before clicking. Checking again.' if retry else
@@ -390,8 +434,8 @@ class App:
                             distance = match.get('distance', float('inf'))
                             diagnostic('unanswered', reason=result.get('reason', 'unknown'),
                                        guess_enabled=self.guess_enabled, client_size=(width, height),
-                                       recognition_ms=recognition_ms,
-                                       options=result.get('options', []),
+                                       recognition_ms=recognition_ms, capture_ms=capture_ms,
+                                       layout_ms=layout_ms, options=result.get('options', []),
                                        candidate=match.get('name'), candidate_index=match.get('index'),
                                        candidate_distance=distance if np.isfinite(distance) else None,
                                        covered_choices=match.get('covered_choices'))
@@ -422,7 +466,8 @@ class App:
                         answered = frame.copy()
                         diagnostic('clicked',status=result['status'],name=result['name'],index=result['index'],
                                    reason=result.get('reason',''),distance=result.get('distance'),
-                                   recognition_ms=recognition_ms,
+                                   recognition_ms=recognition_ms, capture_ms=capture_ms,
+                                   layout_ms=layout_ms, client_size=(width, height),
                                    options=result.get('options',[]),match=result.get('match',{}))
                         pending = {'time':time.monotonic(),'raw':frame_raw.copy(),'frame':frame.copy(),
                                    'boxes':layout['boxes'],'card_box':layout['card_box'],

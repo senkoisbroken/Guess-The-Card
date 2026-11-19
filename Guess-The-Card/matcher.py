@@ -38,6 +38,16 @@ def canonical_learned_name(name):
         'harooftannpsnobunwnh': 'Hero of Ten (Humungousaur)',
         'thelrregular': 'The Irregular',
         'damondog': 'Demon Dog',
+        'ascandadlimitlassmastaer': 'Ascended Limitless Master',
+        'awakenaeddemonbull': 'Awakened Demon Bull',
+        'awakenedred': 'Awakened Red Thorn',
+        'bijuumonstaer': 'Bijuu Monster',
+        'forbiddantransmutation': 'Forbidden Transmutation',
+        'goldanjockey': 'Golden Jockey',
+        'graatape': 'Great Ape',
+        'juicequaan': 'Juice Queen',
+        'lordofeminaence': 'Lord of Eminence',
+        'stormsoveraign': 'Storm Sovereign',
     }
     return aliases.get(normalize_text(name), name)
 
@@ -129,20 +139,28 @@ def image_feature(image, reference):
     return cv2.resize(image[18:80, 5:91], (24, 18), interpolation=cv2.INTER_AREA).astype(np.float32).reshape(-1)
 
 class Catalog:
-    def __init__(self):
+    def __init__(self, *, include_learned=True):
         raw = (ROOT / 'wiki_manifest.json').read_bytes()
         self.manifest_hash = hashlib.sha256(raw).hexdigest()
         self.records = json.loads(raw)['records']
         self.features = None
         self.observed = []
-        for observed_manifest in (ROOT / 'assets' / 'observed' / 'manifest.json', ROOT / 'assets' / 'learned' / 'manifest.json'):
+        seen_observations = set()
+        manifests = [ROOT / 'assets' / 'observed' / 'manifest.json']
+        if include_learned:
+            manifests.append(ROOT / 'assets' / 'learned' / 'manifest.json')
+        for observed_manifest in manifests:
             if observed_manifest.exists():
                 try:
                     for record in json.loads(observed_manifest.read_text(encoding='utf-8')):
                         image = cv2.imread(str(ROOT / record['image_file']))
                         if image is not None:
                             record = dict(record, name=canonical_learned_name(record['name']))
-                            self.observed.append((record, image_feature(image, False)))
+                            feature = image_feature(image, False)
+                            key = normalize_text(record['name']), feature.tobytes()
+                            if key not in seen_observations:
+                                self.observed.append((record, feature))
+                                seen_observations.add(key)
                 except (OSError, ValueError, KeyError, TypeError):
                     continue
 

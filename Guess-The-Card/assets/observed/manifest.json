@@ -73,5 +73,755 @@
     "name": "Six Paths of Pain",
     "variant": "Observed alternate art",
     "image_file": "assets/observed/six_paths_of_pain_alternate_art.png"
+  },
+  {
+    "name": "The Almighty",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_ff7c7118fb6ea36aef888478.png"
+  },
+  {
+    "name": "Cyber Smasher",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_58a68aabafb7befc71af9062.png"
+  },
+  {
+    "name": "Awakened Galactic Tyrant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_80cb82b431225d6838eb8bb1.png"
+  },
+  {
+    "name": "Awakened Light Admiral",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c111c10e0d9476d435769308.png"
+  },
+  {
+    "name": "Juice Queen",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_6dd7a23bcd5f49d688312ce7.png"
+  },
+  {
+    "name": "Crimson Emperor",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_25230c38d185fe1ff0fcdca6.png"
+  },
+  {
+    "name": "Awakened Golden Vampire",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9ee5dfe1b8f4e35fc4358c36.png"
+  },
+  {
+    "name": "Super Mystic Spheres",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_72a9914b86df4beb3b87bb98.png"
+  },
+  {
+    "name": "Shining Star",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_fa354a82f0be5553e66c5709.png"
+  },
+  {
+    "name": "Ancient King of Curses",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9adc228c3583e188c86a3b15.png"
+  },
+  {
+    "name": "Bull Captain",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_774eed0973354b45deb674fb.png"
+  },
+  {
+    "name": "Cursed Ledger",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_caeea307656de153a6587c5d.png"
+  },
+  {
+    "name": "Black Reaper Ghoul",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_0fc446a15252206c15c1841b.png"
+  },
+  {
+    "name": "Juice Queen",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_cd5655dd198eedc1abcc8c7a.png"
+  },
+  {
+    "name": "Eternal Dragon",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_57c8bddd929b10ebdb73a7bf.png"
+  },
+  {
+    "name": "Survey Commander",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_a81dc63dd90d9ac4bbfe6903.png"
+  },
+  {
+    "name": "Awakened Galactic Tyrant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c65f80da0a56d26221232bc5.png"
+  },
+  {
+    "name": "Bijuu Monster",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_11c8cdac48d60d386d2780a5.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_919cfe7abf6ad040c0d94552.png"
+  },
+  {
+    "name": "Lost Chariot",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_4e17638a0388ac95ec3b7163.png"
+  },
+  {
+    "name": "Awakened Golden Vampire",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_f6d5cb9bbd5c50cdfefcdff9.png"
+  },
+  {
+    "name": "Galaxy Hero",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_99d8c67b38f29a8df3aa82f3.png"
+  },
+  {
+    "name": "Cyber Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_49129b56d79f6aa94ff482c9.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_ab646c620ce9f89a4797d88a.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_27dfde940b7029482cd1fdbf.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_6537862d69be5037883b4d64.png"
+  },
+  {
+    "name": "Storm Sovereign",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_cefe5c481212aa0a80ce89f0.png"
+  },
+  {
+    "name": "Galactic Tyrant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_31a641362d923502f9c517d6.png"
+  },
+  {
+    "name": "Azure Legendary Warrior",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_4c6d1b510db40663ad66ad41.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_df0e42e0fc0562e6d1a56a30.png"
+  },
+  {
+    "name": "Secret Puppetmaster",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_8cad398555a3c5ba04f2c6a6.png"
+  },
+  {
+    "name": "Beast of Pain",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_7379d8e9f93d681778c738d7.png"
+  },
+  {
+    "name": "Crimson Demon",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3c3a3870839dfa2e887fb9f2.png"
+  },
+  {
+    "name": "Giant Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_816f8a8740ff79d98b195fdd.png"
+  },
+  {
+    "name": "Tutorial Boss",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_2c4d1f76a4d78d7154f8e14f.png"
+  },
+  {
+    "name": "Infernal",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3009147307bd9174d1739413.png"
+  },
+  {
+    "name": "Truck-Kun",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_bdbb884d71ae4cb4a9d34fec.png"
+  },
+  {
+    "name": "Awakened Tormented Swordsman",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_bf6c0cd5ff3c746bd3bb6e00.png"
+  },
+  {
+    "name": "Inferno Ghoul",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_4f564a2414947dfdfb7aaa58.png"
+  },
+  {
+    "name": "Demon Infernal",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d70ad87279f049d9aca66f3c.png"
+  },
+  {
+    "name": "Low Grade Curse",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_2bea89f369dd10a620a3f36e.png"
+  },
+  {
+    "name": "Galactic Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_10c42084a2fa13f2dedaa8c4.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_775f7cbe9cfe777f2773a6e7.png"
+  },
+  {
+    "name": "Sun Deity",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_e9772e4993c54b02487cba39.png"
+  },
+  {
+    "name": "Beast Tamer",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_739c3d3a75fc23e345d7acbb.png"
+  },
+  {
+    "name": "Lump of Coal",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_99c9bbf9fd852e2d0755dca9.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_6c7fb2324168743f5de75b48.png"
+  },
+  {
+    "name": "Lord of Eminence",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_0fddd550a10010f06d897330.png"
+  },
+  {
+    "name": "Ice Elf",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_fc60640a7505b969dafd3930.png"
+  },
+  {
+    "name": "Terrible Tornado",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_6593456acf8316da9f939641.png"
+  },
+  {
+    "name": "Compass Demon",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_826096ed2e15a2125322204a.png"
+  },
+  {
+    "name": "Turtle",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_212300906e0b66c2e2a2b477.png"
+  },
+  {
+    "name": "Demon Dog",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_30b39f8f455c2458a7ea11d4.png"
+  },
+  {
+    "name": "Colossal Giant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_0516c9873164318bb8c226b6.png"
+  },
+  {
+    "name": "Great Ape",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_4dcc073d0689a62664786a01.png"
+  },
+  {
+    "name": "Ice Elf",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d994d8aee35710dba750d9b0.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c112b508ba85038e6c1ec203.png"
+  },
+  {
+    "name": "Mist Hashira",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_82a7b23b51249f48a856f601.png"
+  },
+  {
+    "name": "Awakened Black Demon",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_edcaadaf830a659f8f6d69e6.png"
+  },
+  {
+    "name": "Forbidden Transmutation",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_2d5a0817a0643417ab1d1040.png"
+  },
+  {
+    "name": "Awakened Demon Bull",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c49532c933ddc8ba003ca327.png"
+  },
+  {
+    "name": "Undead Lich",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_b4c2d69ef6734f360ccd03f7.png"
+  },
+  {
+    "name": "Giant Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_90e15a51fe9209fe4c02f83b.png"
+  },
+  {
+    "name": "Ghoul Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_f25f5a68a2a1384ead920daa.png"
+  },
+  {
+    "name": "Peaceful Swordsman",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9c70980fb5d0c7103b7a4977.png"
+  },
+  {
+    "name": "Mindless Giant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3abfa924bd7d89dcadd1ec73.png"
+  },
+  {
+    "name": "Red Thorn",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_f40f260e80210c8552ec871d.png"
+  },
+  {
+    "name": "Fiend",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_7c75479dec92db8f27654157.png"
+  },
+  {
+    "name": "Zipper Fist",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_5a6780e4205f648d66dd0bf8.png"
+  },
+  {
+    "name": "Terrible Tornado",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_22abe03de35578fad6643aa1.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d0c55819c8e67f33fe666861.png"
+  },
+  {
+    "name": "Crimson Vampire",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_8e6738aab4cf3eaaeafcc1af.png"
+  },
+  {
+    "name": "Dragon Commander",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9cc9ee68be694ae6dd7cd33b.png"
+  },
+  {
+    "name": "Invisible Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_5b14a70fcfb2dfe87d0e63fc.png"
+  },
+  {
+    "name": "Namekian Sage",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c96979b91eee75f8694b0d6d.png"
+  },
+  {
+    "name": "Lunar Beast",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_549344a4c9a86aba817fb706.png"
+  },
+  {
+    "name": "Golden Jockey",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_22f850fec08b7128713865b8.png"
+  },
+  {
+    "name": "Galactic Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_b2a9d780c210cd33a4260b68.png"
+  },
+  {
+    "name": "Power Steal",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_ddcdb622880d7a5aae11c491.png"
+  },
+  {
+    "name": "True Owl Ghoul",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d84bcd6544afdd5de5986d46.png"
+  },
+  {
+    "name": "Bizarre Dog",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_6a2313567db1565cb451fd10.png"
+  },
+  {
+    "name": "Fiend",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_fd4bd5cf8899333dfbe22b54.png"
+  },
+  {
+    "name": "Cyber Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3f42159e65bbdb63582c7252.png"
+  },
+  {
+    "name": "Secret Puppetmaster",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_647556e3f593979c60dff0d5.png"
+  },
+  {
+    "name": "Sun Slayer",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_92ef12f600534bc33949d416.png"
+  },
+  {
+    "name": "Galactic Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_56d4315fd6d8865aaff338f2.png"
+  },
+  {
+    "name": "King of the Tower",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_bb77a3fb5a3e4fb13e6e738a.png"
+  },
+  {
+    "name": "Iced Lone Sword",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_b37065f9bacc764a4893e9cd.png"
+  },
+  {
+    "name": "Chimera Ant Cat",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_0ec6cffb8570c18a7c9ad441.png"
+  },
+  {
+    "name": "Twin Demons",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_f343011e1800d9acd8f0a24d.png"
+  },
+  {
+    "name": "Awakened Star Fist",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_4a09361a7174c0beabcc97b1.png"
+  },
+  {
+    "name": "Undead Follower",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_11b87466cde131115374f3a6.png"
+  },
+  {
+    "name": "Flame Tyrant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_86545d36d42ef3f3084777b3.png"
+  },
+  {
+    "name": "Cyber Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c04273f3e2749876b3f76ff0.png"
+  },
+  {
+    "name": "Tenth Slayer",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_5fedafa6e5e88295703ab620.png"
+  },
+  {
+    "name": "Manga Writer",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_85eb1e964db6736cee0c0852.png"
+  },
+  {
+    "name": "Edgerunner",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d1fcffa3b0acf076256753fe.png"
+  },
+  {
+    "name": "Envious Sin",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_71381b766e75207cfc20eaa5.png"
+  },
+  {
+    "name": "Flaw Of The World",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d6af4e01b4b92061b149b56d.png"
+  },
+  {
+    "name": "Zipper Fist",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_1a221d2b8c7bd41bbca196a9.png"
+  },
+  {
+    "name": "Awakened Berserker Warrior",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_cbbf4708e4a621536374a557.png"
+  },
+  {
+    "name": "Homeroom Teacher",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9a4695faf41807c2491575cd.png"
+  },
+  {
+    "name": "Beast of Pain",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_fe0da685649b72c5d90275f2.png"
+  },
+  {
+    "name": "Fiend",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_e3635f154ea1b9e2b16a3cae.png"
+  },
+  {
+    "name": "Emerald Crusader",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_af632be819a29c5314c1c006.png"
+  },
+  {
+    "name": "Fate Tempter Bull",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d9aacac0c6b6fc0d084b54c6.png"
+  },
+  {
+    "name": "Oni Tyrant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_f8c25cbee2ca0d5ba5452d21.png"
+  },
+  {
+    "name": "Golden Vampire",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_8e63b556d4b021186bc59ea3.png"
+  },
+  {
+    "name": "Beast Giant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d668da5e897ff22a13e8aeca.png"
+  },
+  {
+    "name": "Bird Deity",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3588a78d0c98a870abb8e0d8.png"
+  },
+  {
+    "name": "Ascended Golden Vampire",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9ce69e79df0d4ec4ac60c69f.png"
+  },
+  {
+    "name": "Ice Elf",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_1725efeb8463bf17763aa655.png"
+  },
+  {
+    "name": "Awakened Red Thorn",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_0acfae2b37a281204a541fe8.png"
+  },
+  {
+    "name": "Way of Destruction 91",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_5a697f93cec40af5b580c9bb.png"
+  },
+  {
+    "name": "Hero of Ten (Humungousaur)",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_67711abe87cd2b4cd3acdeae.png"
+  },
+  {
+    "name": "Red Tower",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_b5871f7b7d19487a2035f66a.png"
+  },
+  {
+    "name": "Mindless Giant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_fec25e52e5d90d7ee2d66c7b.png"
+  },
+  {
+    "name": "Fiend",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_0427606617ac45f2c1df9e2b.png"
+  },
+  {
+    "name": "Fear of Fiends",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_75d6914e22c93931757aa8a1.png"
+  },
+  {
+    "name": "Blue Slime",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9cfb8c4f63352f1971414b09.png"
+  },
+  {
+    "name": "The Irregular",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d6772df6dfe2ad79060f2383.png"
+  },
+  {
+    "name": "Bijuu Monster",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_647c857c78937c3364b47afe.png"
+  },
+  {
+    "name": "Toad Summon",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3b9310dcc91dc068f1848901.png"
+  },
+  {
+    "name": "Dimensional Manipulator",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_2a54033f48484db6dbe1fa90.png"
+  },
+  {
+    "name": "Divine Dog",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_128b0c03d5d3853cb5528769.png"
+  },
+  {
+    "name": "Princess of Light",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d4e39c424202a7bcab5cbccb.png"
+  },
+  {
+    "name": "Abnormal Giant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_7ebc3c71e6e1f5561db94f4a.png"
+  },
+  {
+    "name": "Ice Elf",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_16fefa7ec77a8fcbe05b6da8.png"
+  },
+  {
+    "name": "Low Grade Curse",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c490351e4453a0a21570a231.png"
+  },
+  {
+    "name": "Beast of Pain",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_a08511fb5f391a56efd0d9cc.png"
+  },
+  {
+    "name": "Warrior of Fortitude",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_14ebe8a9fd8c225341d99e49.png"
+  },
+  {
+    "name": "Oni Tyrant",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_06e71215fc6f5b1cc2e1e450.png"
+  },
+  {
+    "name": "Shinigami Strategist",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_b030ed0f258e6d05b75224fc.png"
+  },
+  {
+    "name": "Shield Hero",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_32ff5a67b57118c988dcccfe.png"
+  },
+  {
+    "name": "Galactic Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3de3d6cd7a0b56123aadd29a.png"
+  },
+  {
+    "name": "Sticker Strategist",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_c56b93b618ff93323698b41c.png"
+  },
+  {
+    "name": "Giant Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_2e067ec4357c4c107708a09f.png"
+  },
+  {
+    "name": "Beast of Pain",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_06832d99a42d904fb7ab0712.png"
+  },
+  {
+    "name": "Giant Soldier",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_97fa6ef4b965357e384989b3.png"
+  },
+  {
+    "name": "Blood Valkyrie",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_d3f3642be3eb37c6c3cb7aef.png"
+  },
+  {
+    "name": "Star Fist",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_ac3e4b53ebc442080eb9e081.png"
+  },
+  {
+    "name": "Ice Elf",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3ff457ed5459beff54f22d39.png"
+  },
+  {
+    "name": "Beast of Pain",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_3c4b07d7997b5546debbb490.png"
+  },
+  {
+    "name": "Awakened Shadow Monarch",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_922f4c88fdd7616ec42330fb.png"
+  },
+  {
+    "name": "Low Grade Curse",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_4963fc3703b52ab2798257c5.png"
+  },
+  {
+    "name": "Triumphant Chariot",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_4725e49c028fd5d75b9c83d2.png"
+  },
+  {
+    "name": "Ascended Limitless Master",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_b891959338a4c4d6b45ec126.png"
+  },
+  {
+    "name": "Awakened Cursed Fist",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_9faf28363150be28695f930d.png"
+  },
+  {
+    "name": "Lord of Eminence",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_da9d6d0132608802c2c9060c.png"
+  },
+  {
+    "name": "Winged Ghoul",
+    "variant": "Shared observed art",
+    "image_file": "assets/observed/shared_2c154cc0a0a0badd1a0471ae.png"
   }
 ]
