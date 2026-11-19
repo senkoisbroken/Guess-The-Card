@@ -19,7 +19,7 @@ import mss
 import numpy as np
 
 from desktop import WindowsDesktop
-from matcher import Catalog, QuestionReader, answer_for, answer_compact, best_effort_answer, recover_missing_options, prefer_answer, CARD, CLICK_POINTS, CHOICES, ROOT
+from matcher import Catalog, QuestionReader, answer_for, answer_compact, answer_with_native, best_effort_answer, CARD, CLICK_POINTS, CHOICES, ROOT
 from diagnostics import open_log, preview_upload
 from layout import compact_question, compact_replay, give_up_button
 from learning import RevealSampler, revealed_answer, reveal_index, save_observation, save_miss_evidence
@@ -274,16 +274,33 @@ class App:
                         return (self.running.is_set() and not self.closed.is_set()
                                 and self.desktop.roblox_window() == hwnd
                                 and self.desktop.client_rect(hwnd) == bounds)
+                    stale_frame = None
+
+                    def fallback_frame_is_current():
+                        nonlocal stale_frame
+                        if not same_client():
+                            stale_frame = {'kind': 'client_changed'}
+                            return False
+                        current = locate(grab())
+                        if current['kind'] == 'question' and same_question(frame, current['frame']):
+                            return True
+                        stale_frame = current
+                        return False
+
                     with RevealSampler(mss.MSS, same_client, bounds, candidate) as sampler:
-                        result = (answer_compact(frame,catalog,reader,native) if native is not None
-                                  else answer_for(frame,catalog,reader))
+                        result = (answer_compact(frame, catalog, reader, native,
+                                                 allow_guess=self.guess_enabled,
+                                                 still_current=fallback_frame_is_current)
+                                  if native is not None else answer_for(frame, catalog, reader))
                         if result['status'] == 'unknown' and native is None:
                             native_crops = [frame_raw[round(y*height/504):round((y+44)*height/504),
                                                       round(x*width/960):round((x+164)*width/960)] for x,y in CHOICES]
-                            native_options=recover_missing_options(reader,frame,reader.options_native(native_crops))
-                            result = prefer_answer(result, answer_for(frame,catalog,reader,native_options))
-                        if result['status'] == 'unknown' and self.guess_enabled:
+                            result = answer_with_native(frame, catalog, reader, native_crops, result,
+                                                        allow_guess=self.guess_enabled,
+                                                        still_current=fallback_frame_is_current)
+                        if stale_frame is None and result['status'] == 'unknown' and self.guess_enabled:
                             result = best_effort_answer(result,catalog,frame)
+                    recognition_ms = round((time.monotonic() - candidate['time']) * 1000)
                     if not same_client():
                         continue
                     learned = None
@@ -299,9 +316,32 @@ class App:
                         except (OSError, ValueError, KeyError, TypeError) as exc:
                             diagnostic('learning_error',error=str(exc))
                         continue
+                    def schedule_stale_retry(stage, current):
+                        candidate['stale_retries'] = stale_retries + 1
+                        retry = candidate['stale_retries'] <= MAX_STALE_RETRIES
+                        diagnostic('stale_answer', stage=stage, layout=current['kind'],
+                                   client_size=(width, height), retry=retry, recognition_ms=recognition_ms,
+                                   **(question_change_metrics(frame, current['frame'])
+                                      if current['kind'] == 'question' else {}))
+                        detail = ('Question changed before clicking. Checking again.' if retry else
+                                  'Question stayed unstable. Watching for the reveal.')
+                        self.messages.put(('detail', detail))
+
+                    if stale_frame is not None:
+                        schedule_stale_retry('before_native_fallback', stale_frame)
+                        pending = candidate
+                        continue
                     if result['status'] not in ('matched','guess'):
                         if pending is None:
-                            diagnostic('unanswered',reason=result.get('reason','unknown'))
+                            match = result.get('match') or {}
+                            distance = match.get('distance', float('inf'))
+                            diagnostic('unanswered', reason=result.get('reason', 'unknown'),
+                                       guess_enabled=self.guess_enabled, client_size=(width, height),
+                                       recognition_ms=recognition_ms,
+                                       options=result.get('options', []),
+                                       candidate=match.get('name'), candidate_index=match.get('index'),
+                                       candidate_distance=distance if np.isfinite(distance) else None,
+                                       covered_choices=match.get('covered_choices'))
                             pending = candidate
                         self.messages.put(('detail', result.get('reason', 'Uncertain; no click.')))
                         continue
@@ -311,17 +351,6 @@ class App:
                         continue
                     if not self.running.is_set() or self.desktop.roblox_window() != hwnd or self.desktop.client_rect(hwnd) != bounds:
                         continue
-                    def schedule_stale_retry(stage, current):
-                        candidate['stale_retries'] = stale_retries + 1
-                        retry = candidate['stale_retries'] <= MAX_STALE_RETRIES
-                        diagnostic('stale_answer', stage=stage, layout=current['kind'],
-                                   client_size=(width, height), retry=retry,
-                                   **(question_change_metrics(frame, current['frame'])
-                                      if current['kind'] == 'question' else {}))
-                        detail = ('Question changed before clicking. Checking again.' if retry else
-                                  'Question stayed unstable. Watching for the reveal.')
-                        self.messages.put(('detail', detail))
-
                     latest = locate(grab())
                     if latest['kind'] != 'question' or not same_question(frame, latest['frame']):
                         schedule_stale_retry('before_move', latest)
@@ -340,6 +369,7 @@ class App:
                         answered = frame.copy()
                         diagnostic('clicked',status=result['status'],name=result['name'],index=result['index'],
                                    reason=result.get('reason',''),distance=result.get('distance'),
+                                   recognition_ms=recognition_ms,
                                    options=result.get('options',[]),match=result.get('match',{}))
                         pending = {'time':time.monotonic(),'raw':frame_raw.copy(),'frame':frame.copy(),
                                    'boxes':layout['boxes'],'card_box':layout['card_box'],

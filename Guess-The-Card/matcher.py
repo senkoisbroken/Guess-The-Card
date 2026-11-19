@@ -5,6 +5,7 @@ import re
 from difflib import SequenceMatcher
 from functools import lru_cache
 from pathlib import Path
+from threading import local
 
 import cv2
 import numpy as np
@@ -21,10 +22,10 @@ CLICK_POINTS = [(530, 250), (698, 250), (530, 298), (698, 298)]
 def normalize_text(text):
     return re.sub(r'[^a-z0-9]', '', text.lower())
 
-def recover_missing_options(reader, frame, options):
+def recover_missing_options(reader, frame, options, *, canonical=None):
     if len(options)!=4 or all(text and confidence >= .3 for text,confidence in options):
         return options
-    alternate=reader.options(frame)
+    alternate = reader.options(frame) if canonical is None else canonical
     if len(alternate)!=4:return options
     return [alternate[i] if (not text or confidence < .3) and alternate[i][0] and alternate[i][1]>=.5
             else (text,confidence) for i,(text,confidence) in enumerate(options)]
@@ -40,13 +41,39 @@ def canonical_learned_name(name):
     }
     return aliases.get(normalize_text(name), name)
 
-def label_similarity(name, text):
-    observed = normalize_text(canonical_learned_name(text))
-    # Wiki skin entries sometimes append a bundle or form description that
-    # the game does not put on its answer button.
+_label_matcher = local()
+
+
+@lru_cache(maxsize=8192)
+def _catalog_spellings(name):
+    # Skin names can have a suffix that is absent from the answer button.
     short = re.sub(r'\s*\([^)]*\)', '', name).strip()
-    return max(SequenceMatcher(None, normalize_text(candidate), observed).ratio()
-               for candidate in (name, short) if normalize_text(candidate))
+    return tuple(dict.fromkeys(filter(None, (normalize_text(name), normalize_text(short)))))
+
+
+@lru_cache(maxsize=1024)
+def _ocr_spelling(text):
+    return normalize_text(canonical_learned_name(text))
+
+
+@lru_cache(maxsize=32768)
+def _spelling_similarity(name, observed):
+    spellings = _catalog_spellings(name)
+    if observed in spellings:
+        return 1.0
+    if not hasattr(_label_matcher, 'matcher'):
+        _label_matcher.matcher = SequenceMatcher()
+    matcher = _label_matcher.matcher
+    matcher.set_seq2(observed)
+    scores = []
+    for spelling in spellings:
+        matcher.set_seq1(spelling)
+        scores.append(matcher.ratio())
+    return max(scores)
+
+
+def label_similarity(name, text):
+    return _spelling_similarity(name, _ocr_spelling(text))
 
 def best_effort_answer(result, catalog=None, frame=None):
     """Use the closest supported candidate; leave unsupported choices alone."""
@@ -66,7 +93,7 @@ def best_effort_answer(result, catalog=None, frame=None):
             match=catalog.find_for_choices(frame[y1:y2,x1:x2],options,relaxed=True) or {}
     idx=match.get('index')
     distance=match.get('distance',float('inf'))
-    if isinstance(idx,int) and 0<=idx<4 and distance<=950:
+    if type(idx) is int and 0 <= idx < 4 and np.isfinite(distance) and distance >= 0:
         return {'status':'guess','index':idx,'name':match.get('name','Unknown'),
                 'variant':match.get('variant','Unknown'),'distance':match.get('distance',float('nan')),
                 'guess_kind':'closest image','reason':result.get('reason','Uncertain'),
@@ -244,6 +271,7 @@ class QuestionReader:
     def __init__(self):
         from rapidocr_onnxruntime import RapidOCR
         self.ocr = RapidOCR()
+        self._quick_native_ocr = None
         self.prompt = cv2.imread(str(ROOT / 'assets' / 'question_prompt.png'), cv2.IMREAD_GRAYSCALE)
         self.results = cv2.imread(str(ROOT / 'assets' / 'event_title.png'), cv2.IMREAD_GRAYSCALE)
         self.replay = cv2.imread(str(ROOT / 'assets' / 'replay_button.png'), cv2.IMREAD_GRAYSCALE)
@@ -276,16 +304,22 @@ class QuestionReader:
         results, _ = self.ocr.text_recognizer(crops)
         return [(str(text), float(confidence)) for text, confidence in results]
 
-    def options_native(self, crops):
+    def options_native(self, crops, *, quick=False):
         """Read buttons at their native size, including wrapped two-line labels."""
+        ocr = self.ocr
+        if quick:
+            if self._quick_native_ocr is None:
+                from rapidocr_onnxruntime import RapidOCR
+                self._quick_native_ocr = RapidOCR(det_limit_side_len=256, det_model_path=None)
+            ocr = self._quick_native_ocr
         output = []
         for crop in crops:
             image = cv2.resize(crop,None,fx=1.4,fy=1.4,interpolation=cv2.INTER_CUBIC)
-            lines, _ = self.ocr(image, text_score=.35)
+            lines, _ = ocr(image, text_score=.35)
             if not lines:
                 h,w=crop.shape[:2]
                 center=crop[round(.11*h):round(.90*h),round(.04*w):round(.96*w)]
-                direct,_=self.ocr.text_recognizer([cv2.resize(center,None,fx=3,fy=3)]) if center.size else ([],None)
+                direct,_=ocr.text_recognizer([cv2.resize(center,None,fx=3,fy=3)]) if center.size else ([],None)
                 text,confidence=direct[0] if direct else ('',0.)
                 output.append((str(text),float(confidence)) if confidence>=.7 else ('',0.))
                 continue
@@ -298,28 +332,79 @@ class QuestionReader:
                        crop[round(.49*h):round(.90*h),round(.04*w):round(.96*w)],
                        crop[round(.11*h):round(.90*h),round(.04*w):round(.96*w)]]
                 if all(area.size for area in areas):
-                    values,_=self.ocr.text_recognizer([cv2.resize(area,None,fx=3,fy=3) for area in areas])
-                    if len(values)==3:
-                        (top,tc),(bottom,bc),(full,fc)=values
+                    # Both halves are wider relative to their height than the
+                    # full crop, so removing it leaves batch padding unchanged.
+                    values,_=ocr.text_recognizer([cv2.resize(area,None,fx=3,fy=3) for area in areas[:2]])
+                    if len(values)==2:
+                        (top,tc),(bottom,bc)=values
                         if (tc>=.75 and bc>=.75 and normalize_text(top) and normalize_text(bottom) and
                                 max(SequenceMatcher(None,normalize_text(text),normalize_text(part)).ratio()
                                     for part in (top,bottom))>=.8):
                             text=f'{top} {bottom}';confidence=(float(tc)+float(bc))/2
                         elif confidence<.7:
-                            separate,_=self.ocr.text_recognizer([cv2.resize(areas[2],None,fx=3,fy=3)])
+                            separate,_=ocr.text_recognizer([cv2.resize(areas[2],None,fx=3,fy=3)])
                             if separate:
                                 full,fc=separate[0]
                                 if fc>=.7 and fc>confidence+.1:text=str(full);confidence=float(fc)
             output.append((text,confidence))
         return output
 
-def answer_compact(frame, catalog, reader, crops):
+def answer_compact(frame, catalog, reader, crops, *, allow_guess=False, still_current=None):
     fast=answer_for(frame,catalog,reader)
-    if (fast['status']=='matched' and fast.get('distance',float('inf'))<150 and
-            fast['distance'] < .15*fast.get('second_distance',0)):
+    if fast['status'] == 'waiting' or (
+            fast['status'] == 'matched' and fast['distance'] < 150
+            and fast['distance'] < .15 * fast['second_distance']):
         return fast
-    native = answer_for(frame,catalog,reader,recover_missing_options(reader,frame,reader.options_native(crops)))
-    return prefer_answer(fast, native)
+    return answer_with_native(frame, catalog, reader, crops, fast,
+                              allow_guess=allow_guess, still_current=still_current)
+
+
+def _clear_guess_choice(result, options):
+    match = result.get('match') or {}
+    index = match.get('index')
+    distance = match.get('distance', float('inf'))
+    runner = match.get('second_distance', float('inf'))
+    name = match.get('name')
+    if (type(index) is not int or not 0 <= index < 4 or len(options) != 4
+            or not name or match.get('covered_choices', 0) < 3
+            or not np.isfinite(runner) or not 0 <= distance < runner
+            or distance > .5 * runner):
+        return None
+    text, confidence = options[index]
+    similarity = label_similarity(name, text)
+    alternative = max(label_similarity(name, option)
+                      for i, (option, _) in enumerate(options) if i != index)
+    if confidence >= .55 and similarity >= .65 and similarity - alternative >= .12:
+        return index, normalize_text(name)
+    return None
+
+
+def answer_with_native(frame, catalog, reader, crops, fast, *,
+                       allow_guess=False, still_current=None):
+    """Try lower-resolution OCR before rerunning full-size text detection."""
+    canonical = fast.get('options', ())
+
+    def match_reads(reads):
+        options = recover_missing_options(reader, frame, reads, canonical=canonical)
+        if options == canonical:
+            return fast
+        return answer_for(frame, catalog, reader, options)
+
+    if still_current is not None and not still_current():
+        return fast
+    quick_reads = reader.options_native(crops, quick=True)
+    if still_current is not None and not still_current():
+        return fast
+    quick = match_reads(quick_reads)
+    if (quick['status'] == 'matched'
+            and quick['match'].get('covered_choices', 0) >= 2
+            and quick['distance'] < .18 * quick['second_distance']):
+        return quick
+    if allow_guess and fast['status'] == 'unknown':
+        previous = _clear_guess_choice(fast, canonical)
+        if previous is not None and previous == _clear_guess_choice(quick, quick_reads):
+            return best_effort_answer(quick)
+    return prefer_answer(fast, match_reads(reader.options_native(crops)))
 
 
 def prefer_answer(first, second):
