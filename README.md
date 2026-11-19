@@ -10,8 +10,7 @@ image catalog. It uses normal foreground mouse input and does not read or write 
 - [Latest release, checksum, and scan notes](https://github.com/senkoisbroken/Guess-The-Card/releases/latest)
 
 The [VirusTotal report for an earlier setup ZIP](https://www.virustotal.com/gui/file/fb6d5cc0efcf015fa4e76aed13fdbcd10869d8d74813fca6f970d084280d57d5?nocache=1)
-covers a different SHA-256. See the latest release notes for the Defender
-scan of the current download.
+covers a different SHA-256. The current download checksum is on the latest release.
 
 Extract the ZIP and run **Start.bat**. Open the event in Roblox and press **F8**
 to start or pause. The first launch sets up 64-bit Python 3.13 and dependencies

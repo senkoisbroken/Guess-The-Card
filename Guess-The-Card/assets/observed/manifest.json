@@ -68,5 +68,10 @@
     "name": "Tormented Swordsman",
     "variant": "Observed from confirmed reveal",
     "image_file": "assets/observed/tormented_swordsman_miss_20261031.png"
+  },
+  {
+    "name": "Six Paths of Pain",
+    "variant": "Observed alternate art",
+    "image_file": "assets/observed/six_paths_of_pain_alternate_art.png"
   }
 ]

@@ -198,14 +198,29 @@ class Catalog:
         @lru_cache(maxsize=None)
         def similarity(name, text):
             return label_similarity(name,text)
-        names={r['name'] for r in self.records}|{r['name'] for r,_ in self.observed}
-        best_text=[max((similarity(name,text) for name in names),default=0.) if text else 0.
-                   for text,conf in options]
+        names = {r['name'] for r in self.records} | {r['name'] for r, _ in self.observed}
+        spellings = {name: _catalog_spellings(name) for name in names}
+        reserved = []
+        for text, confidence in options:
+            label = _ocr_spelling(text) if confidence >= .70 else ''
+            owners = {name for name, variants in spellings.items() if label in variants} if label else set()
+            # Parenthetical skin names still share ownership of their base label.
+            base_names = {spellings[name][-1] for name in owners}
+            reserved.append(owners if len(base_names) == 1 else set())
+
+        best_text = [
+            1.0 if reserved[i] else max((similarity(name, text) for name in names), default=0.)
+            if text else 0.
+            for i, (text, _) in enumerate(options)
+        ]
+
         @lru_cache(maxsize=None)
         def choice_for(name):
-            ranked=sorted(((similarity(name,text),i) for i,(text,conf) in enumerate(options)
-                           if text and conf>=(.3 if relaxed else .5)
-                           and similarity(name,text)>=best_text[i]-.12), reverse=True)
+            ranked = sorted(((similarity(name, text), i)
+                             for i, (text, confidence) in enumerate(options)
+                             if text and confidence >= (.3 if relaxed else .5)
+                             and (not reserved[i] or name in reserved[i])
+                             and similarity(name, text) >= best_text[i] - .12), reverse=True)
             if not ranked or ranked[0][0]<(.45 if relaxed else .53):
                 return None
             if len(ranked)>1 and ranked[0][0]-ranked[1][0]<(.03 if relaxed else .08):
@@ -304,6 +319,27 @@ class QuestionReader:
         results, _ = self.ocr.text_recognizer(crops)
         return [(str(text), float(confidence)) for text, confidence in results]
 
+    def reread_label(self, crop, name):
+        """Check for a known label using a tight crop of the dark letter outlines."""
+        height, width = crop.shape[:2]
+        inside = crop[round(.13 * height):round(.89 * height),
+                      round(.10 * width):round(.90 * width)]
+        if inside.size == 0:
+            return None
+        gray = cv2.cvtColor(inside, cv2.COLOR_BGR2GRAY)
+        x, y, w, h = cv2.boundingRect(cv2.inRange(gray, 0, 90))
+        if not (3 <= h < .72 * gray.shape[0] and 4 <= w < .90 * gray.shape[1]):
+            return None
+        pad = max(2, round(.035 * height))
+        text = gray[max(0, y-pad):y+h+pad, max(0, x-pad):x+w+pad]
+        variants = [text, cv2.equalizeHist(text), cv2.bitwise_not(text)]
+        crops = [cv2.cvtColor(image, cv2.COLOR_GRAY2BGR) for image in variants]
+        reads, _ = self.ocr.text_recognizer(crops)
+        spellings = _catalog_spellings(name)
+        return max(((str(value), float(confidence)) for value, confidence in reads
+                    if confidence >= .70 and _ocr_spelling(value) in spellings),
+                   key=lambda read: read[1], default=None)
+
     def options_native(self, crops, *, quick=False):
         """Read buttons at their native size, including wrapped two-line labels."""
         ocr = self.ocr
@@ -379,6 +415,48 @@ def _clear_guess_choice(result, options):
     return None
 
 
+def recover_visual_label(frame, catalog, reader, crops, fast):
+    """Re-read a garbled button only when the card strongly matches known art."""
+    options = fast.get('options', ())
+    if fast['status'] != 'unknown' or len(options) != 4 or len(crops) != 4:
+        return None
+    suspects = [i for i, (_, confidence) in enumerate(options) if confidence < .70]
+    if not 1 <= len(suspects) <= 2:
+        return None
+    x1, y1, x2, y2 = CARD
+    visual = catalog.find(frame[y1:y2, x1:x2])
+    if visual is None:
+        return None
+    limit, margin = (12, .05) if visual.get('source') == 'observed' else (100, .12)
+    if (not 0 <= visual['distance'] < limit
+            or not visual['distance'] < margin * visual['second_distance']):
+        return None
+    name = visual['name']
+    if any(confidence >= .50 and label_similarity(name, text) >= .80
+           for text, confidence in options):
+        return None
+    names = {record['name'] for record in catalog.records}
+    names.update(record['name'] for record, _ in catalog.observed)
+    exact_labels = {label for card_name in names for label in _catalog_spellings(card_name)}
+    verified = []
+    for index in suspects:
+        if _ocr_spelling(options[index][0]) in exact_labels:
+            continue
+        read = reader.reread_label(crops[index], name)
+        if read is not None:
+            verified.append((index, read))
+    if len(verified) != 1:
+        return None
+    index, read = verified[0]
+    repaired = list(options)
+    repaired[index] = read
+    match = answer_for(frame, catalog, reader, repaired)
+    if (match['status'] == 'matched' and match['index'] == index
+            and normalize_text(match['name']) == normalize_text(name)):
+        return match
+    return None
+
+
 def answer_with_native(frame, catalog, reader, crops, fast, *,
                        allow_guess=False, still_current=None):
     """Try lower-resolution OCR before rerunning full-size text detection."""
@@ -392,6 +470,9 @@ def answer_with_native(frame, catalog, reader, crops, fast, *,
 
     if still_current is not None and not still_current():
         return fast
+    repaired = recover_visual_label(frame, catalog, reader, crops, fast)
+    if repaired is not None:
+        return repaired
     quick_reads = reader.options_native(crops, quick=True)
     if still_current is not None and not still_current():
         return fast
