@@ -491,19 +491,65 @@ def answer_with_native(frame, catalog, reader, crops, fast, *,
     repaired = recover_visual_label(frame, catalog, reader, crops, fast)
     if repaired is not None:
         return repaired
-    quick_reads = reader.options_native(crops, quick=True)
+    def decisive(result):
+        return (result['status'] == 'matched'
+                and result['match'].get('covered_choices', 0) >= 2
+                and result['distance'] < .18 * result['second_distance'])
+
+    def partial_confirmed(result, reads, suspects):
+        if (result['status'] != 'matched' or result['index'] not in suspects
+                or result['match'].get('covered_choices', 0) != 4):
+            return False
+        index, name = result['index'], result['name']
+        text, confidence = reads[index]
+        if confidence < .75 or _ocr_spelling(text) not in _catalog_spellings(name):
+            return False
+        x1, y1, x2, y2 = CARD
+        visual = catalog.find(frame[y1:y2, x1:x2])
+        # Check against the whole catalog so an unread alternative cannot be
+        # eliminated by its tentative OCR label alone.
+        return (visual is not None and label_similarity(visual['name'], name) == 1.
+                and visual['distance'] < 550
+                and visual['distance'] < .30 * visual['second_distance'])
+
+    def native_pass(seed, *, quick=False):
+        def read(indices):
+            selected = [crops[i] for i in indices]
+            return reader.options_native(selected, quick=True) if quick else reader.options_native(selected)
+
+        indices = list(range(len(crops)))
+        if len(seed) == len(crops) == 4:
+            suspects = [i for i, (text, confidence) in enumerate(seed)
+                        if not text.strip() or confidence < .72]
+            if 1 <= len(suspects) <= 2:
+                targeted = read(suspects)
+                if len(targeted) == len(suspects):
+                    reads = list(seed)
+                    for i, value in zip(suspects, targeted):
+                        reads[i] = value
+                    partial = match_reads(reads)
+                    if partial_confirmed(partial, reads, suspects):
+                        return partial, None
+                    remaining = [i for i in indices if i not in suspects]
+                    other = read(remaining)
+                    if len(other) == len(remaining):
+                        for i, value in zip(remaining, other):
+                            reads[i] = value
+                        return match_reads(reads), reads
+        reads = read(indices)
+        return match_reads(reads), reads
+
+    quick, quick_reads = native_pass(canonical, quick=True)
     if still_current is not None and not still_current():
         return fast
-    quick = match_reads(quick_reads)
-    if (quick['status'] == 'matched'
-            and quick['match'].get('covered_choices', 0) >= 2
-            and quick['distance'] < .18 * quick['second_distance']):
+    if quick_reads is None or decisive(quick):
         return quick
     if allow_guess and fast['status'] == 'unknown':
         previous = _clear_guess_choice(fast, canonical)
         if previous is not None and previous == _clear_guess_choice(quick, quick_reads):
             return best_effort_answer(quick)
-    return prefer_answer(fast, match_reads(reader.options_native(crops)))
+    full, _ = native_pass(quick_reads)
+    return prefer_answer(fast, full)
 
 
 def prefer_answer(first, second):
