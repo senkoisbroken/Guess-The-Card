@@ -358,7 +358,7 @@ class QuestionReader:
                     if confidence >= .70 and _ocr_spelling(value) in spellings),
                    key=lambda read: read[1], default=None)
 
-    def options_native(self, crops, *, quick=False):
+    def options_native(self, crops, *, quick=False, direct_cache=None):
         """Read buttons at their native size, including wrapped two-line labels."""
         ocr = self.ocr
         if quick:
@@ -366,6 +366,21 @@ class QuestionReader:
                 from rapidocr_onnxruntime import RapidOCR
                 self._quick_native_ocr = RapidOCR(det_limit_side_len=256, det_model_path=None)
             ocr = self._quick_native_ocr
+        def direct_read(areas):
+            # Keep the entire ordered batch intact. RapidOCR pads each crop
+            # using the width of its batch peers before recognition.
+            key = None
+            if direct_cache is not None:
+                key = tuple((area.shape, area.dtype.str, area.tobytes()) for area in areas)
+                if key in direct_cache:
+                    return direct_cache[key]
+            reads, _ = ocr.text_recognizer([
+                cv2.resize(area, None, fx=3, fy=3) for area in areas
+            ])
+            if key is not None:
+                direct_cache[key] = reads
+            return reads
+
         output = []
         for crop in crops:
             image = cv2.resize(crop,None,fx=1.4,fy=1.4,interpolation=cv2.INTER_CUBIC)
@@ -373,7 +388,7 @@ class QuestionReader:
             if not lines:
                 h,w=crop.shape[:2]
                 center=crop[round(.11*h):round(.90*h),round(.04*w):round(.96*w)]
-                direct,_=ocr.text_recognizer([cv2.resize(center,None,fx=3,fy=3)]) if center.size else ([],None)
+                direct = direct_read([center]) if center.size else []
                 text,confidence=direct[0] if direct else ('',0.)
                 output.append((str(text),float(confidence)) if confidence>=.7 else ('',0.))
                 continue
@@ -388,7 +403,7 @@ class QuestionReader:
                 if all(area.size for area in areas):
                     # Both halves are wider relative to their height than the
                     # full crop, so removing it leaves batch padding unchanged.
-                    values,_=ocr.text_recognizer([cv2.resize(area,None,fx=3,fy=3) for area in areas[:2]])
+                    values = direct_read(areas[:2])
                     if len(values)==2:
                         (top,tc),(bottom,bc)=values
                         if (tc>=.75 and bc>=.75 and normalize_text(top) and normalize_text(bottom) and
@@ -396,7 +411,7 @@ class QuestionReader:
                                     for part in (top,bottom))>=.8):
                             text=f'{top} {bottom}';confidence=(float(tc)+float(bc))/2
                         elif confidence<.7:
-                            separate,_=ocr.text_recognizer([cv2.resize(areas[2],None,fx=3,fy=3)])
+                            separate = direct_read([areas[2]])
                             if separate:
                                 full,fc=separate[0]
                                 if fc>=.7 and fc>confidence+.1:text=str(full);confidence=float(fc)
@@ -479,6 +494,7 @@ def answer_with_native(frame, catalog, reader, crops, fast, *,
                        allow_guess=False, still_current=None):
     """Try lower-resolution OCR before rerunning full-size text detection."""
     canonical = fast.get('options', ())
+    direct_cache = {}
 
     def match_reads(reads):
         options = recover_missing_options(reader, frame, reads, canonical=canonical)
@@ -515,7 +531,7 @@ def answer_with_native(frame, catalog, reader, crops, fast, *,
     def native_pass(seed, *, quick=False):
         def read(indices):
             selected = [crops[i] for i in indices]
-            return reader.options_native(selected, quick=True) if quick else reader.options_native(selected)
+            return reader.options_native(selected, quick=quick, direct_cache=direct_cache)
 
         indices = list(range(len(crops)))
         if len(seed) == len(crops) == 4:
